@@ -1,39 +1,25 @@
-name: Build AURA APK from ZIP
+name: Build APK
 on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unzip Project
+      - name: Unzip
         run: |
-          if ls *.zip 1> /dev/null 2>&1; then
-            unzip -o *.zip
-            rm *.zip
-            if [ -d "AURA_FIREBASE_GITHUB_FINAL" ]; then
-              mv AURA_FIREBASE_GITHUB_FINAL/*. || true
-              mv AURA_FIREBASE_GITHUB_FINAL/.*. 2>/dev/null || true
-            fi
-          fi
-          ls -la
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+          FILE=$(ls | grep -i aura | head -n 1)
+          unzip -o "$FILE"
+          FOLDER=$(ls -d */ | head -n 1)
+          cp -r $FOLDER*. || true
+          cp -r $FOLDER.*. 2>/dev/null || true
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v3
+      - run: chmod +x gradlew
+      - run:./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
         with:
-          gradle-version: 8.6
-      - name: Build APK
-        run: |
-          if [! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            gradle wrapper --gradle-version 8.6
-          fi
-          chmod +x gradlew
-         ./gradlew assembleDebug --stacktrace
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: AURA-Music-APK
+          name: AURA-APK
           path: app/build/outputs/apk/debug/app-debug.apk
